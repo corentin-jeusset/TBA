@@ -42,22 +42,58 @@ class Actions:
         False
         >>> go(game, ["go"], 1)
         False
-
-        """
-        
+"""
         player = game.player
         l = len(list_of_words)
-        # If the number of parameters is incorrect, print an error message and return False.
         if l != number_of_parameters + 1:
             command_word = list_of_words[0]
             print(MSG1.format(command_word=command_word))
             return False
 
-        # Get the direction from the list of words.
-        direction = list_of_words[1]
-        # Move the player in the direction specified by the parameter.
-        player.move(direction)
-        return True
+        exits = player.current_room.exits
+
+    # normalisation simple d'une candidate direction
+        def normalize(s):
+            m = {
+                "n": "N", "NORD": "N", "Nord": "N", "nord": "N",
+                "e": "E", "EST": "E", "Est": "E", "est": "E",
+                "s": "S", "SUD": "S", "Sud": "S", "sud": "S",
+                "o": "O", "OUEST": "O", "Ouest": "O", "ouest": "O"
+            }
+            return m.get(s.strip().lower(), s.strip().upper())
+
+    # candidate initiale si fournie (ex: 'go N')
+        candidate = list_of_words[1]
+
+        while True:
+        # si on n'a pas de candidate, lire une ligne et la traiter
+            if candidate is None:
+                line = input("> ").strip()
+                if not line:
+                    continue
+                parts = line.split()
+            # si l'entrée est 'go <dir>' on prend la direction comme candidate
+                if parts[0].lower() == "go" and len(parts) > 1:
+                    candidate = parts[1]
+                else:
+                # sinon traiter la ligne comme une commande normale
+                    game.process_command(line)
+                    if getattr(game, "finished", False):
+                        return False
+                # après exécution, on redemande (candidate reste None)
+                    continue
+
+        # tenter la candidate
+            direction = normalize(candidate)
+            next_room = exits.get(direction)
+            if next_room is not None:
+                player.move(direction)
+                return True
+
+        # candidate invalide : message + ré-affichage des sorties, puis redemande
+            print("\nCette direction n'existe pas. Veuillez en choisir une autre.")
+            print(player.current_room.get_long_description())
+            candidate = None
 
     def quit(game, list_of_words, number_of_parameters):
         """

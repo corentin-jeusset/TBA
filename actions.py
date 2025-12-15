@@ -173,3 +173,13 @@ class Actions:
             print("\t- " + str(command))
         print()
         return True
+    
+    def back(game, list_of_words, number_of_parameters) :
+        """
+        Permet au joueur de retourner dans la pièce précédemment visitée.
+        """
+        # La méthode back() de Player gère la logique et l'affichage.
+        game.player.back()
+        
+        # Retourne False ou None si Game.process_command ne doit pas ré-afficher la pièce.
+        return False

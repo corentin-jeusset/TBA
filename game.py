@@ -30,6 +30,11 @@ class Game:
         back = Command("back", " : retourner à la pièce précédente", Actions.back, 0)
         self.commands["back"] = back
         
+        #Setup items
+
+        #sword = Item("Epée", "Une épée en acier brillant, parfaite pour le combat.", 3.5)
+        #self.items.append(sword)        
+        
         # Setup rooms
 
         crossing = Room("Crossing", "à un croisement de plusieurs chemin, dans une étendue verte.")

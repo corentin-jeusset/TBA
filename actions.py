@@ -205,32 +205,69 @@ class Actions:
     # Dans actions.py
 
     def take(game, list_of_words, number_of_parameters):
+        # 1. VÉRIFICATION DES PARAMÈTRES (inchangé)
         if len(list_of_words) != number_of_parameters + 1:
             print(f"\nLa commande '{list_of_words[0]}' prend 1 paramètre.\n")
             return False
 
-        item_name = list_of_words[1]
+        target_name = list_of_words[1]
         player = game.player
-        room_inventory = player.current_room.inventory
+        current_room = player.current_room
 
-        if item_name not in room_inventory:
-            print(f"\nIl n'y a pas d'objet nommé '{item_name}' ici.\n")
+        # -------------------------------------------------------------
+        # CAS 1 : C'EST UN OBJET (ITEM)
+        # -------------------------------------------------------------
+        if target_name in current_room.inventory:
+            item = current_room.inventory[target_name]
+            current_weight = player.get_current_weight()
+
+            # Vérification du poids
+            if current_weight + item.weight > player.max_weight:
+                print(f"\n[ERREUR] Cet objet est trop lourd !")
+                print(f"Poids de l'objet : {item.weight} kg")
+                print(f"Capacité restante : {player.max_weight - current_weight} kg\n")
+                return False
+            # Transfert de l'objet
+            player.inventory[target_name] = current_room.inventory.pop(target_name)
+            print(f"\nVous avez pris : {target_name}.\n")
+            return True
+
+        # -------------------------------------------------------------
+        # CAS 2 : C'EST UN PERSONNAGE (CHARACTER)
+        # -------------------------------------------------------------
+        elif target_name in current_room.characters:
+            npc = current_room.characters[target_name]
+        
+            # On définit quels personnages sont "prenables" (ex: Chien, Chat)
+            # Vous pouvez modifier cette liste selon vos besoins
+            compagnons_possibles = ["Fletcher"]
+
+            if npc.name in compagnons_possibles:
+                # On vérifie le poids aussi pour le personnage !
+                # Note : Assurez-vous que la classe Character possède un attribut self.weight
+                current_weight = player.get_current_weight()
+            
+                # Si le Character n'a pas de poids défini, on considère 0 par défaut (sécurité)
+                npc_weight = getattr(npc, "weight", 0) 
+
+                if current_weight + npc_weight > player.max_weight:
+                    print(f"\n[ERREUR] {npc.name} est trop lourd pour être porté/guidé !")
+                    return False
+
+                # Transfert du personnage vers l'inventaire du joueur
+                player.inventory[target_name] = current_room.characters.pop(target_name)
+                print(f"\n{target_name} est maintenant votre compagnon et vous suit partout !\n")
+                return True
+            else:
+                print(f"\n{target_name} refuse de vous suivre.\n")
+                return False
+
+        # -------------------------------------------------------------
+        # CAS 3 : RIEN TROUVÉ
+        # -------------------------------------------------------------
+        else:
+            print(f"\nIl n'y a pas de '{target_name}' ici.\n")
             return False
-
-        item = room_inventory[item_name]
-        current_weight = player.get_current_weight()
-
-        # VÉRIFICATION DU POIDS
-        if current_weight + item.weight > player.max_weight:
-            print(f"\n[ERREUR] Cet objet est trop lourd !")
-            print(f"Poids de l'objet : {item.weight} kg")
-            print(f"Capacité restante : {player.max_weight - current_weight} kg\n")
-            return False
-
-        # Si le poids est OK, on procède au transfert
-        player.inventory[item_name] = room_inventory.pop(item_name)
-        print(f"\nVous avez pris : {item_name}.\n")
-        return True
 
     def drop(game, list_of_words, number_of_parameters):
         """
@@ -272,3 +309,46 @@ class Actions:
         # Rappel : game.player.get_inventory() retourne la chaîne formatée
         print(game.player.get_inventory())
         return True
+    
+    def talk(game, list_of_words, number_of_parameters):
+        """
+        Permet de discuter avec un personnage présent dans la pièce OU dans l'inventaire.
+        Commande : talk <nom_du_personnage>
+        """
+        # 1. Vérifier si le joueur a spécifié un nom
+        if number_of_parameters == 0:
+            print("Parler à qui ?")
+            return
+
+        # 2. Récupérer le nom du personnage
+        npc_name = list_of_words[1]
+
+        # 3. Récupérer les données nécessaires
+        player = game.player
+        current_room = player.current_room
+
+        # ---------------------------------------------------------
+        # CAS 1 : Le personnage est dans la PIÈCE (Code existant)
+        # ---------------------------------------------------------
+        if npc_name in current_room.characters:
+            npc = current_room.characters[npc_name]
+            print(f"{npc.name} : {npc.get_msg()}")
+        
+        # ---------------------------------------------------------
+        # CAS 2 : Le personnage est dans l'INVENTAIRE (Nouveau code)
+        # ---------------------------------------------------------
+        elif npc_name in player.inventory:
+            npc = player.inventory[npc_name]
+        
+            # SÉCURITÉ : On vérifie que c'est bien un Personnage et pas un objet (épée...)
+            # La fonction hasattr vérifie si l'objet possède la méthode 'get_msg'
+            if hasattr(npc, 'get_msg'):
+                print(f"{npc.name} : {npc.get_msg()}")
+            else:
+                print(f"Je ne pense pas que {npc_name} puisse vous répondre...")
+
+        # ---------------------------------------------------------
+        # CAS 3 : Introuvable
+        # ---------------------------------------------------------
+        else:
+            print(f"Il n'y a pas de {npc_name} ici (ni avec vous).")

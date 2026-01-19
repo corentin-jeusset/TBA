@@ -2,11 +2,14 @@
 
 # Import modules
 
+DEBUG = True
+
 from room import Room
 from player import Player
 from command import Command
 from actions import Actions
 from item import Item
+from character import Character
 
 class Game:
 
@@ -30,6 +33,13 @@ class Game:
         self.commands["go"] = go
         back = Command("back", " : retourner à la pièce précédente", Actions.back, 0)
         self.commands["back"] = back
+        self.commands["look"] = Command("look ", ": permet de regarder autour de vous", Actions.look, 0)
+        self.commands["inventory"] = Command("inventory ", ": Affiche votre inventaire", Actions.inventory, 0)
+        self.commands["take"] = Command("take ", ": Prendre un objet dans la pièce", Actions.take, 1)
+        self.commands["check"] = Command("check ", ": Affiche le contenu de votre inventaire", Actions.check, 0)
+        self.commands["drop"] = Command("drop ", ": Déposer un objet au sol", Actions.drop, 1)
+        self.commands["talk"] = Command("talk ", ": Discuter avec un personnage", Actions.talk, 1)
+
         
         # Setup rooms
 
@@ -126,6 +136,16 @@ class Game:
         bouclier = Item("bouclier", "un bouclier robuste", 9)
         crossing.inventory[bouclier.name] = bouclier
 
+        #Setup PNJs
+
+        fletcher = Character("Fletcher", "un petit chien ressemblant étrangement à un petit sanglier.", crossing, [
+                "Wouf ! Wouf !", 
+                "Fletcher remue la queue frénétiquement.", 
+                "Il vous apporte un vieux bâton.", 
+                "Fletcher penche la tête sur le côté en vous regardant."
+            ])
+        crossing.characters[fletcher.name] = fletcher
+
 
         syn = {'N':('n','nord','NORD','Nord'),'E':('e','est','EST','Est'),'S':('s','sud','SUD','Sud'),'O':('o','ouest','OUEST','Ouest')}
         for r in (crossing, meadow, forest, marshes, lake, fishing_boat, fishermans_hut, coast, 
@@ -137,11 +157,6 @@ class Game:
 
         self.player = Player(input("\nEntrez votre nom: "))
         self.player.set_initial_room(crossing)
-        self.commands["look"] = Command("look ", ": permet de regarder autour de vous", Actions.look, 0)
-        self.commands["inventory"] = Command("inventory ", ": Affiche votre inventaire", Actions.inventory, 0)
-        self.commands["take"] = Command("take ", ": Prendre un objet dans la pièce", Actions.take, 1)
-        self.commands["check"] = Command("check ", ": Affiche le contenu de votre inventaire", Actions.check, 0)
-        self.commands["drop"] = Command("drop ", ": Déposer un objet au sol", Actions.drop, 1)
     
     # Play the game
     def play(self):

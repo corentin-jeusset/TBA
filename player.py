@@ -31,6 +31,8 @@ class Player():
         self.current_room = None
         self.history = []
         self.room_trail = []
+        self.inventory = {}
+        self.max_weight = 10
     
     # Define the move method.
     def set_initial_room(self, room):
@@ -104,3 +106,29 @@ class Player():
              print("Vous êtes revenu à votre point de départ.")
             
         return True
+    
+    def get_inventory(self):
+        if not self.inventory:
+            return "Votre inventaire est vide."
+        
+        items_str = "\n".join([f"  - {item}" for item in self.inventory.values()])
+        return f"Vous portez actuellement :\n{items_str}"
+    
+    # Dans player.py
+
+    def get_inventory(self):
+        if not self.inventory:
+            return f"Votre inventaire est vide. (Charge : 0/{self.max_weight} kg)"
+    
+        items_str = "\n".join([f"    - {item}" for item in self.inventory.values()])
+        current_w = self.get_current_weight()
+    
+        return (f"Vous disposez des items suivants :\n{items_str}\n"
+                f"Poids total : {current_w}/{self.max_weight} kg")
+    
+    def get_current_weight(self):
+        """Calcule le poids total des objets dans l'inventaire."""
+        total_weight = 0
+        for item in self.inventory.values():
+            total_weight += item.weight
+        return total_weight

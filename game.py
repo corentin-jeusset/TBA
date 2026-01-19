@@ -6,6 +6,7 @@ from room import Room
 from player import Player
 from command import Command
 from actions import Actions
+from item import Item
 
 class Game:
 
@@ -29,11 +30,6 @@ class Game:
         self.commands["go"] = go
         back = Command("back", " : retourner à la pièce précédente", Actions.back, 0)
         self.commands["back"] = back
-        
-        #Setup items
-
-        #sword = Item("Epée", "Une épée en acier brillant, parfaite pour le combat.", 3.5)
-        #self.items.append(sword)        
         
         # Setup rooms
 
@@ -123,6 +119,13 @@ class Game:
         plain.exits = {"N" : None, "E" : None, "S" : None, "O" : bridge}
         cave.exits = {"N" : crossing, "E" : None, "S" : None, "O" : None}
 
+        #Setup items 
+
+        sword = Item("sword", "une épée au fil tranchant", 2)
+        crossing.inventory[sword.name] = sword
+        bouclier = Item("bouclier", "un bouclier robuste", 9)
+        crossing.inventory[bouclier.name] = bouclier
+
 
         syn = {'N':('n','nord','NORD','Nord'),'E':('e','est','EST','Est'),'S':('s','sud','SUD','Sud'),'O':('o','ouest','OUEST','Ouest')}
         for r in (crossing, meadow, forest, marshes, lake, fishing_boat, fishermans_hut, coast, 
@@ -134,7 +137,12 @@ class Game:
 
         self.player = Player(input("\nEntrez votre nom: "))
         self.player.set_initial_room(crossing)
-
+        self.commands["look"] = Command("look ", ": permet de regarder autour de vous", Actions.look, 0)
+        self.commands["inventory"] = Command("inventory ", ": Affiche votre inventaire", Actions.inventory, 0)
+        self.commands["take"] = Command("take ", ": Prendre un objet dans la pièce", Actions.take, 1)
+        self.commands["check"] = Command("check ", ": Affiche le contenu de votre inventaire", Actions.check, 0)
+        self.commands["drop"] = Command("drop ", ": Déposer un objet au sol", Actions.drop, 1)
+    
     # Play the game
     def play(self):
         self.setup()

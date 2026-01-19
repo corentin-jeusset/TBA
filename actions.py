@@ -175,11 +175,100 @@ class Actions:
         return True
     
     def back(game, list_of_words, number_of_parameters) :
-        """
-        Permet au joueur de retourner dans la pièce précédemment visitée.
-        """
-        # La méthode back() de Player gère la logique et l'affichage.
         game.player.back()
-        
-        # Retourne False ou None si Game.process_command ne doit pas ré-afficher la pièce.
         return False
+    
+    def look(game, list_of_words, number_of_parameters): # Ajoutez bien ces 3 paramètres
+        """
+        Affiche les objets présents dans la pièce actuelle.
+        """
+        # 1. Vérification des paramètres (look ne prend pas d'argument après le mot "look")
+        l = len(list_of_words)
+        if l != number_of_parameters + 1:
+            command_word = list_of_words[0]
+            # On utilise MSG0 car look se tape seul
+            print(f"\nLa commande '{command_word}' ne prend pas de paramètre.\n")
+            return False
+        
+        # 2. Logique de la commande
+        # On récupère l'inventaire de la pièce où se trouve le joueur
+        print(game.player.current_room.get_inventory())
+        return True
+    
+    def inventory(game, list_of_words, number_of_parameters):
+        if len(list_of_words) != number_of_parameters + 1:
+            print(f"\nLa commande '{list_of_words[0]}' ne prend pas de paramètre.\n")
+            return False
+        print(game.player.get_inventory())
+        return True
+    
+    # Dans actions.py
+
+    def take(game, list_of_words, number_of_parameters):
+        if len(list_of_words) != number_of_parameters + 1:
+            print(f"\nLa commande '{list_of_words[0]}' prend 1 paramètre.\n")
+            return False
+
+        item_name = list_of_words[1]
+        player = game.player
+        room_inventory = player.current_room.inventory
+
+        if item_name not in room_inventory:
+            print(f"\nIl n'y a pas d'objet nommé '{item_name}' ici.\n")
+            return False
+
+        item = room_inventory[item_name]
+        current_weight = player.get_current_weight()
+
+        # VÉRIFICATION DU POIDS
+        if current_weight + item.weight > player.max_weight:
+            print(f"\n[ERREUR] Cet objet est trop lourd !")
+            print(f"Poids de l'objet : {item.weight} kg")
+            print(f"Capacité restante : {player.max_weight - current_weight} kg\n")
+            return False
+
+        # Si le poids est OK, on procède au transfert
+        player.inventory[item_name] = room_inventory.pop(item_name)
+        print(f"\nVous avez pris : {item_name}.\n")
+        return True
+
+    def drop(game, list_of_words, number_of_parameters):
+        """
+        Permet au joueur de déposer un objet au sol.
+        Usage : drop <nom_objet>
+        """
+        if len(list_of_words) != number_of_parameters + 1:
+            print(f"\nLa commande '{list_of_words[0]}' prend 1 paramètre (le nom de l'objet).\n")
+            return False
+
+        item_name = list_of_words[1]
+        player = game.player
+
+        # Vérifier si le joueur possède l'objet
+        if item_name in player.inventory:
+            # Retirer du joueur et mettre dans la pièce
+            item = player.inventory.pop(item_name)
+            player.current_room.inventory[item_name] = item
+            print(f"\nVous avez déposé : {item_name}.\n")
+            return True
+    
+        print(f"\nVous n'avez pas de '{item_name}' dans votre inventaire.\n")
+        return False
+    
+    def check(game, list_of_words, number_of_parameters):
+        """
+        Affiche l'inventaire du joueur.
+        Cette commande ne prend pas de paramètre.
+        """
+        # 1. Vérification du nombre de paramètres (doit être 1 : juste "check")
+        l = len(list_of_words)
+        if l != number_of_parameters + 1:
+            command_word = list_of_words[0]
+            # On utilise MSG0 car check se tape seul
+            print(f"\nLa commande '{command_word}' ne prend pas de paramètre.\n")
+            return False
+        
+        # 2. Appel de la méthode get_inventory du joueur et affichage
+        # Rappel : game.player.get_inventory() retourne la chaîne formatée
+        print(game.player.get_inventory())
+        return True

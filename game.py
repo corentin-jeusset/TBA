@@ -10,6 +10,7 @@ from command import Command
 from actions import Actions
 from item import Item
 from character import Character
+from quest import Quest
 
 class Game:
 
@@ -129,6 +130,14 @@ class Game:
         plain.exits = {"N" : None, "E" : None, "S" : None, "O" : bridge}
         cave.exits = {"N" : crossing, "E" : None, "S" : None, "O" : None}
 
+        # Setup exits synonyms
+
+        syn = {'N':('n','nord','NORD','Nord'),'E':('e','est','EST','Est'),'S':('s','sud','SUD','Sud'),'O':('o','ouest','OUEST','Ouest')}
+        for r in (crossing, meadow, forest, marshes, lake, fishing_boat, fishermans_hut, coast, 
+                  waterfall, ascent, footpath, crossroads, viewpoint, cave_entrance, 
+                  waterfall_cave, path, cliff_top, little_forest, road, castle_entrance, dungeon, 
+                  bedroom, boss_s_office, bridge, balcony, plain, plateau, cave): [r.exits.update({s:v for s in (syn.get(k,())+(k.lower(),k.capitalize(),k.upper()))}) for k,v in list(r.exits.items())]
+        
         #Setup items 
 
         sword = Item("sword", "une épée au fil tranchant", 2)
@@ -146,12 +155,9 @@ class Game:
             ])
         crossing.characters[fletcher.name] = fletcher
 
+        #Setup quests
 
-        syn = {'N':('n','nord','NORD','Nord'),'E':('e','est','EST','Est'),'S':('s','sud','SUD','Sud'),'O':('o','ouest','OUEST','Ouest')}
-        for r in (crossing, meadow, forest, marshes, lake, fishing_boat, fishermans_hut, coast, 
-                  waterfall, ascent, footpath, crossroads, viewpoint, cave_entrance, 
-                  waterfall_cave, path, cliff_top, little_forest, road, castle_entrance, dungeon, 
-                  bedroom, boss_s_office, bridge, balcony, plain, plateau, cave): [r.exits.update({s:v for s in (syn.get(k,())+(k.lower(),k.capitalize(),k.upper()))}) for k,v in list(r.exits.items())]
+        
 
         # Setup player and starting room
 

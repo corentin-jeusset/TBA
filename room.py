@@ -64,16 +64,9 @@ class Room:
     def get_long_description(self):
         return f"\nVous êtes {self.description}\n\n{self.get_exit_string()}\n"
     
-    def get_inventory_string(self):
-        if not self.inventory:
-            return "Il n'y a aucun objet ici."
-
-        item_list = ", ".join(self.inventory.keys())
-        return f"Objets présents : {item_list}"
 
     def get_long_description(self):
         return (f"\nVous êtes {self.description}\n"
-                f"{self.get_inventory_string()}\n"
                 f"{self.get_exit_string()}\n")
     
     def get_inventory(self):

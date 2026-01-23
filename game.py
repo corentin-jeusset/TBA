@@ -11,6 +11,7 @@ from actions import Actions
 from item import Item
 from character import Character
 from quest import Quest
+from quest import QuestManager
 
 class Game:
 
@@ -40,6 +41,14 @@ class Game:
         self.commands["check"] = Command("check ", ": Affiche le contenu de votre inventaire", Actions.check, 0)
         self.commands["drop"] = Command("drop ", ": Déposer un objet au sol", Actions.drop, 1)
         self.commands["talk"] = Command("talk ", ": Discuter avec un personnage", Actions.talk, 1)
+        quests = Command("quests", " : afficher toutes les quêtes et leur statut", Actions.quests, 0)
+        self.commands["quests"] = quests
+        quest = Command("quest", " : afficher les détails d'une quête spécifique", Actions.quest, 1)
+        self.commands["quest"] = quest
+        activate = Command("activate", " : activer une quête spécifique", Actions.activate, 1)
+        self.commands["activate"] = activate
+        rewards = Command("rewards", " : afficher toutes les récompenses obtenues", Actions.rewards, 0)
+        self.commands["rewards"] = rewards
 
         
         # Setup rooms
@@ -155,14 +164,19 @@ class Game:
             ])
         crossing.characters[fletcher.name] = fletcher
 
-        #Setup quests
-
-        
-
         # Setup player and starting room
 
         self.player = Player(input("\nEntrez votre nom: "))
         self.player.set_initial_room(crossing)
+
+        #Setup quests
+
+        travel_quest = Quest(
+            title="Grand Voyageur",
+            description="Déplacez-vous 10 fois entre les lieux.",
+            objectives=["Se déplacer 10 fois"],
+            reward="Bottes de voyageur")
+        self.player.quest_manager.add_quest(travel_quest)
     
     # Play the game
     def play(self):

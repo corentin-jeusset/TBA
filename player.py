@@ -37,8 +37,8 @@ class Player():
         self.inventory = {}
         self.max_weight = 10
         self.move_count = 0
-        self.quest_manager = QuestManager(self)
-        self.rewards = []  # List to store earned rewards
+        self.rewards = [] # List to store earned rewards
+        self.quest_manager = QuestManager(self)  
 
     # Define the move method.
     def set_initial_room(self, room):

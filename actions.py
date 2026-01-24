@@ -51,8 +51,32 @@ class Actions:
             return False
 
         exits = player.current_room.exits
+        # 1. Récupérer la direction saisie par le joueur
+        direction = list_of_words[1]
 
-    # normalisation simple d'une candidate direction
+        if direction in exits:
+            player.move(direction)
+            
+            # --- VÉRIFICATION DU GAME OVER SEULEMENT ---
+            if getattr(player.current_room, 'is_deadly', False):
+                print("\n=== GAME OVER ===")
+                game.finished = True
+            if player.current_room.name == "Plain":
+                print("\n🎉 FÉLICITATIONS ! Vous avez atteint la fin de l'aventure. 🎉")
+                
+                # Petit bonus pour voir tes récompenses à la fin :
+                player.show_rewards()
+                
+                game.finished = True
+                return True
+                
+            return True
+        
+        # 3. Si la direction n'existe pas
+        print("\nCette direction n'existe pas.")
+        return False
+
+        # normalisation simple d'une candidate direction
         def normalize(s):
             m = {
                 "n": "N", "NORD": "N", "Nord": "N", "nord": "N",
@@ -62,38 +86,40 @@ class Actions:
             }
             return m.get(s.strip().lower(), s.strip().upper())
 
-    # candidate initiale si fournie (ex: 'go N')
+        # candidate initiale si fournie (ex: 'go N')
         candidate = list_of_words[1]
 
         while True:
-        # si on n'a pas de candidate, lire une ligne et la traiter
+            # si on n'a pas de candidate, lire une ligne et la traiter
             if candidate is None:
                 line = input("> ").strip()
                 if not line:
                     continue
                 parts = line.split()
-            # si l'entrée est 'go <dir>' on prend la direction comme candidate
+                # si l'entrée est 'go <dir>' on prend la direction comme candidate
                 if parts[0].lower() == "go" and len(parts) > 1:
                     candidate = parts[1]
                 else:
-                # sinon traiter la ligne comme une commande normale
+                    # sinon traiter la ligne comme une commande normale
                     game.process_command(line)
                     if getattr(game, "finished", False):
                         return False
-                # après exécution, on redemande (candidate reste None)
+                    # après exécution, on redemande (candidate reste None)
                     continue
 
-        # tenter la candidate
+            # tenter la candidate
             direction = normalize(candidate)
             next_room = exits.get(direction)
             if next_room is not None:
                 player.move(direction)
                 return True
 
-        # candidate invalide : message + ré-affichage des sorties, puis redemande
+            # candidate invalide : message + ré-affichage des sorties, puis redemande
             print("\nCette direction n'existe pas. Veuillez en choisir une autre.")
             print(player.current_room.get_long_description())
             candidate = None
+
+            current_room = game.player.current_room
 
     def quit(game, list_of_words, number_of_parameters):
         """
@@ -191,8 +217,26 @@ class Actions:
             return False
         
         # 2. Logique de la commande
-        # On récupère l'inventaire de la pièce où se trouve le joueur
-        print(game.player.current_room.get_inventory())
+        room = game.player.current_room
+        
+        # Affiche la description de base (le lieu et les sorties)
+        print(room.get_long_description())
+
+        # Vérifie si la salle est vraiment vide (ni objets, ni persos)
+        if not room.inventory and not room.characters:
+            print("Il n'y a rien d'autre ici.")
+            return True
+
+        print("On voit :")
+        
+        # 1. Boucle pour les objets (Item)
+        for item in room.inventory.values():
+            print(f"    - {item.name} : {item.description} ({item.weight} kg)")
+            
+        # 2. Boucle pour les personnages (Character)
+        for character in room.characters.values():
+            print(f"    - {character.name} : {character.description}")
+            
         return True
     
     def inventory(game, list_of_words, number_of_parameters):
@@ -205,15 +249,17 @@ class Actions:
     # Dans actions.py
 
     def take(game, list_of_words, number_of_parameters):
-        # 1. VÉRIFICATION DES PARAMÈTRES (inchangé)
-        if len(list_of_words) != number_of_parameters + 1:
-            print(f"\nLa commande '{list_of_words[0]}' prend 1 paramètre.\n")
+        # 1. VÉRIFICATION DES PARAMÈTRES (MODIFIÉE pour accepter plusieurs mots)
+        if len(list_of_words) < 2:
+            print(f"\nLa commande '{list_of_words[0]}' prend au moins 1 paramètre.\n")
             return False
-
-        target_name = list_of_words[1]
+        
+        # FUSION DES MOTS : "Bouteille", "de", "Rhum" devient "Bouteille de Rhum"
+        target_name = " ".join(list_of_words[1:])
+        
         player = game.player
         current_room = player.current_room
-
+        
         # -------------------------------------------------------------
         # CAS 1 : C'EST UN OBJET (ITEM)
         # -------------------------------------------------------------
@@ -230,6 +276,9 @@ class Actions:
             # Transfert de l'objet
             player.inventory[target_name] = current_room.inventory.pop(target_name)
             print(f"\nVous avez pris : {target_name}.\n")
+
+            # --- LES DEUX LIGNES À AJOUTER ICI ---
+            player.quest_manager.complete_objective("Récupérer la bouteille de Rhum")
             return True
 
         # -------------------------------------------------------------
@@ -268,6 +317,7 @@ class Actions:
         else:
             print(f"\nIl n'y a pas de '{target_name}' ici.\n")
             return False
+        
 
     def drop(game, list_of_words, number_of_parameters):
         """
@@ -315,43 +365,24 @@ class Actions:
         Permet de discuter avec un personnage présent dans la pièce OU dans l'inventaire.
         Commande : talk <nom_du_personnage>
         """
-        # 1. Vérifier si le joueur a spécifié un nom
-        if number_of_parameters == 0:
-            print("Parler à qui ?")
-            return
+        # On vérifie d'abord si la liste contient bien au moins 2 mots (talk + nom)
+        if len(list_of_words) < 2:
+            print("\nAvec qui voulez-vous parler ? (Exemple: 'talk <nom>')\n")
+            return False
 
-        # 2. Récupérer le nom du personnage
+        # Maintenant on peut lire l'index [1] sans risque de crash
         npc_name = list_of_words[1]
+        current_room = game.player.current_room
 
-        # 3. Récupérer les données nécessaires
-        player = game.player
-        current_room = player.current_room
-
-        # ---------------------------------------------------------
-        # CAS 1 : Le personnage est dans la PIÈCE (Code existant)
-        # ---------------------------------------------------------
+        # On vérifie si le personnage est présent dans la pièce
         if npc_name in current_room.characters:
-            npc = current_room.characters[npc_name]
-            print(f"{npc.name} : {npc.get_msg()}")
-        
-        # ---------------------------------------------------------
-        # CAS 2 : Le personnage est dans l'INVENTAIRE (Nouveau code)
-        # ---------------------------------------------------------
-        elif npc_name in player.inventory:
-            npc = player.inventory[npc_name]
-        
-            # SÉCURITÉ : On vérifie que c'est bien un Personnage et pas un objet (épée...)
-            # La fonction hasattr vérifie si l'objet possède la méthode 'get_msg'
-            if hasattr(npc, 'get_msg'):
-                print(f"{npc.name} : {npc.get_msg()}")
-            else:
-                print(f"Je ne pense pas que {npc_name} puisse vous répondre...")
-
-        # ---------------------------------------------------------
-        # CAS 3 : Introuvable
-        # ---------------------------------------------------------
+            character = current_room.characters[npc_name]
+            # On appelle la méthode pour obtenir un message aléatoire ou défini
+            print(f"\n{character.name} : {character.get_msg()}")
+            return True
         else:
-            print(f"Il n'y a pas de {npc_name} ici (ni avec vous).")
+            print(f"\nIl n'y a pas de '{npc_name}' ici.")
+            return False
 
     @staticmethod
     def quests(game, list_of_words, number_of_parameters):
@@ -500,8 +531,7 @@ class Actions:
         msg1 = f"\nImpossible d'activer la quête '{quest_title}'. "
         msg2 = "Vérifiez le nom ou si elle n'est pas déjà active.\n"
         print(msg1 + msg2)
-        # print(f"\nImpossible d'activer la quête '{quest_title}'. \
-        #             Vérifiez le nom ou si elle n'est pas déjà active.\n")
+
         return False
     
     @staticmethod

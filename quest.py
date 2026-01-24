@@ -713,3 +713,13 @@ class QuestManager:
             print(quest.get_details(current_counts))
         else:
             print(f"\nQuête '{quest_title}' non trouvée.\n")
+
+    def update(self, objective_text):
+        """
+        Alias pour complete_objective afin de maintenir la compatibilité 
+        avec les appels de type quest_manager.update().
+        """
+        return self.complete_objective(objective_text)
+    
+    
+

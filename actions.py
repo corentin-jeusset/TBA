@@ -220,7 +220,7 @@ class Actions:
         room = game.player.current_room
         
         # Affiche la description de base (le lieu et les sorties)
-        print(room.get_long_description())
+        # print(room.get_long_description())
 
         # Vérifie si la salle est vraiment vide (ni objets, ni persos)
         if not room.inventory and not room.characters:
@@ -371,7 +371,7 @@ class Actions:
             return False
 
         # Maintenant on peut lire l'index [1] sans risque de crash
-        npc_name = list_of_words[1]
+        npc_name = " ".join(list_of_words[1:])
         current_room = game.player.current_room
 
         # On vérifie si le personnage est présent dans la pièce

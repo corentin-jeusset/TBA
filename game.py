@@ -176,18 +176,21 @@ class Game:
                 "Il y a une bouteille de Rhum cachée dedans, retrouve-la et je te récompenserai.", 
                 "Le pêcheur vous propose une quête."
             ])
+        pêcheur.talk_goal = 4
         fishermans_hut.characters[pêcheur.name] = pêcheur
         esprit = Character("Esprit", "un esprit mystérieux", crossing, [
                 "Bonjour voyageur.", 
                 "En continuant vers le nord, tu trouveras le chateau.", 
                 "Cette zone est vaste, explore-la bien avant d'entrer dans ce dernier", 
             ])
+        esprit.talk_goal = 3
         little_forest.characters[esprit.name] = esprit
         randonneur = Character("Randonneur", "un randonneur en quête de découvertes", crossing, [
                 "Ah, un autre aventurier !", 
                 "J'adore marcher, tu devrais en faire de même !", 
                 "Le randonneur vous propose une quête.", 
             ])
+        randonneur.talk_goal = 3
         viewpoint.characters[randonneur.name] = randonneur
         roi_dechu = Character("Roi Déchu", "un roi déchu en quête de rédemption", crossing, [
                 "Te voilà enfin.", 
@@ -195,6 +198,7 @@ class Game:
                 "Va parler à l'esprit, je te recompenserais.", 
                 "Le roi déchu vous propose une quête.", 
             ])
+        roi_dechu.talk_goal = 4
         boss_s_office.characters[roi_dechu.name] = roi_dechu
 
         # Setup player and starting room
@@ -206,20 +210,20 @@ class Game:
 
         travel_quest = Quest(
             title="Randonneur",
-            description="Déplacez-vous 10 fois entre les lieux.",
-            objectives=["Se déplacer 10 fois"],
+            description="Allez en haut de la falaise",
+            objectives=["Cliff_top"],
             reward="Bottes de voyageur")
         self.player.quest_manager.add_quest(travel_quest)
         travel_quest = Quest(
             title="Pêcheur",
             description="Trouvez le bateau du pêcheur et récupérez la bouteille de Rhum.",
-            objectives=["Récupérer la bouteille de Rhum"],
+            objectives=["Récupérer Bouteille de Rhum"],
             reward="Appats magiques")
         self.player.quest_manager.add_quest(travel_quest)
         travel_quest = Quest(
             title="Roi Déchu",
-            description="Parlez à l'esprit",
-            objectives=["Parler à l'esprit"],
+            description="Parlez à l'Esprit",
+            objectives=["Parlez à Esprit"],
             reward="Épée sinistre du roi")
         self.player.quest_manager.add_quest(travel_quest)
     

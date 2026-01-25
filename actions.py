@@ -51,75 +51,43 @@ class Actions:
             return False
 
         exits = player.current_room.exits
-        # 1. Récupérer la direction saisie par le joueur
         direction = list_of_words[1]
 
         if direction in exits:
             player.move(direction)
-            
-            # --- VÉRIFICATION DU GAME OVER SEULEMENT ---
+        
+            print(player.current_room.get_long_description())
+            if player.history:
+                print(player.get_history_string())
+                
+            current_room = player.current_room
+            objective_name = current_room.name
+            player.quest_manager.complete_objective(objective_name)
+            for q in player.quest_manager.quests:
+                if q.is_completed and q.reward:
+                    if q.reward not in player.rewards:
+                        print() 
+                        player.add_reward(q.reward)
+           
+            # Check for deadly rooms or winning conditions
             if getattr(player.current_room, 'is_deadly', False):
                 print("\n=== GAME OVER ===")
                 game.finished = True
-            if player.current_room.name == "Plain":
-                print("\n🎉 FÉLICITATIONS ! Vous avez atteint la fin de l'aventure. 🎉")
-                
-                # Petit bonus pour voir tes récompenses à la fin :
+            if player.current_room.name == "Plain" or player.current_room.name == "Plateau":
+                if player.current_room.name == "Plateau":
+                    print("\n👑 FÉLICITATIONS ! Vous avez atteint la fin de l'aventure. 🎉")
+                else:
+                    print("\n🎉 FÉLICITATIONS ! Vous avez atteint la fin de l'aventure. 🎉")
                 player.show_rewards()
                 
                 game.finished = True
-                return True
-                
+                return True    
             return True
         
         # 3. Si la direction n'existe pas
         print("\nCette direction n'existe pas.")
         return False
 
-        # normalisation simple d'une candidate direction
-        def normalize(s):
-            m = {
-                "n": "N", "NORD": "N", "Nord": "N", "nord": "N",
-                "e": "E", "EST": "E", "Est": "E", "est": "E",
-                "s": "S", "SUD": "S", "Sud": "S", "sud": "S",
-                "o": "O", "OUEST": "O", "Ouest": "O", "ouest": "O"
-            }
-            return m.get(s.strip().lower(), s.strip().upper())
-
-        # candidate initiale si fournie (ex: 'go N')
-        candidate = list_of_words[1]
-
-        while True:
-            # si on n'a pas de candidate, lire une ligne et la traiter
-            if candidate is None:
-                line = input("> ").strip()
-                if not line:
-                    continue
-                parts = line.split()
-                # si l'entrée est 'go <dir>' on prend la direction comme candidate
-                if parts[0].lower() == "go" and len(parts) > 1:
-                    candidate = parts[1]
-                else:
-                    # sinon traiter la ligne comme une commande normale
-                    game.process_command(line)
-                    if getattr(game, "finished", False):
-                        return False
-                    # après exécution, on redemande (candidate reste None)
-                    continue
-
-            # tenter la candidate
-            direction = normalize(candidate)
-            next_room = exits.get(direction)
-            if next_room is not None:
-                player.move(direction)
-                return True
-
-            # candidate invalide : message + ré-affichage des sorties, puis redemande
-            print("\nCette direction n'existe pas. Veuillez en choisir une autre.")
-            print(player.current_room.get_long_description())
-            candidate = None
-
-            current_room = game.player.current_room
 
     def quit(game, list_of_words, number_of_parameters):
         """
@@ -216,13 +184,8 @@ class Actions:
             print(f"\nLa commande '{command_word}' ne prend pas de paramètre.\n")
             return False
         
-        # 2. Logique de la commande
         room = game.player.current_room
-        
-        # Affiche la description de base (le lieu et les sorties)
-        # print(room.get_long_description())
 
-        # Vérifie si la salle est vraiment vide (ni objets, ni persos)
         if not room.inventory and not room.characters:
             print("Il n'y a rien d'autre ici.")
             return True
@@ -245,24 +208,17 @@ class Actions:
             return False
         print(game.player.get_inventory())
         return True
-    
-    # Dans actions.py
 
     def take(game, list_of_words, number_of_parameters):
-        # 1. VÉRIFICATION DES PARAMÈTRES (MODIFIÉE pour accepter plusieurs mots)
         if len(list_of_words) < 2:
             print(f"\nLa commande '{list_of_words[0]}' prend au moins 1 paramètre.\n")
             return False
         
-        # FUSION DES MOTS : "Bouteille", "de", "Rhum" devient "Bouteille de Rhum"
         target_name = " ".join(list_of_words[1:])
         
         player = game.player
         current_room = player.current_room
         
-        # -------------------------------------------------------------
-        # CAS 1 : C'EST UN OBJET (ITEM)
-        # -------------------------------------------------------------
         if target_name in current_room.inventory:
             item = current_room.inventory[target_name]
             current_weight = player.get_current_weight()
@@ -273,17 +229,18 @@ class Actions:
                 print(f"Poids de l'objet : {item.weight} kg")
                 print(f"Capacité restante : {player.max_weight - current_weight} kg\n")
                 return False
+            
             # Transfert de l'objet
             player.inventory[target_name] = current_room.inventory.pop(target_name)
             print(f"\nVous avez pris : {target_name}.\n")
 
-            # --- LES DEUX LIGNES À AJOUTER ICI ---
-            player.quest_manager.complete_objective("Récupérer la bouteille de Rhum")
-            return True
+            player.quest_manager.complete_objective(f"Récupérer {target_name}")
 
-        # -------------------------------------------------------------
-        # CAS 2 : C'EST UN PERSONNAGE (CHARACTER)
-        # -------------------------------------------------------------
+            for q in player.quest_manager.quests:
+                if q.is_completed and q.reward not in player.rewards:
+                    player.add_reward(q.reward)
+
+
         elif target_name in current_room.characters:
             npc = current_room.characters[target_name]
         
@@ -372,13 +329,29 @@ class Actions:
 
         # Maintenant on peut lire l'index [1] sans risque de crash
         npc_name = " ".join(list_of_words[1:])
-        current_room = game.player.current_room
+        player = game.player 
+        current_room = player.current_room
 
         # On vérifie si le personnage est présent dans la pièce
         if npc_name in current_room.characters:
             character = current_room.characters[npc_name]
+            if not hasattr(character, 'talk_count'):
+                character.talk_count = 0
             # On appelle la méthode pour obtenir un message aléatoire ou défini
             print(f"\n{character.name} : {character.get_msg()}")
+            goal = getattr(character, 'talk_goal', 1)
+            if character.talk_count >= goal:
+                character.talk_count = 0
+            character.talk_count += 1
+            print(f"({character.talk_count}/{goal})")
+            if character.talk_count >= goal:
+                print() # Ton petit espace demandé
+                player.quest_manager.complete_objective(f"Parlez à {npc_name}")
+
+                for q in player.quest_manager.quests:
+                    if q.is_completed and q.reward:
+                        if q.reward not in player.rewards:
+                            player.add_reward(q.reward)
             return True
         else:
             print(f"\nIl n'y a pas de '{npc_name}' ici.")

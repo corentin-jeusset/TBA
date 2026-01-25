@@ -62,10 +62,13 @@ class Player():
 
         if old_room_description not in self.history:
              self.history.append(old_room_description)
-             print(self.current_room.get_long_description())
+             #print(self.current_room.get_long_description())
         
-        if self.history:
-            print(self.get_history_string())
+        #if self.history:
+            #print(self.get_history_string())
+        
+        if len(self.history) > 3:
+            self.history.pop(0)
 
         self.quest_manager.check_room_objectives(self.current_room.name)
 
@@ -164,7 +167,7 @@ class Player():
         """
         if reward and reward not in self.rewards:
             self.rewards.append(reward)
-            print(f"\n🎁 Vous avez obtenu: {reward}\n")
+            #print(f"\n🎁 Vous avez obtenu: {reward}\n")
 
     def show_rewards(self):
         """

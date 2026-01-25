@@ -157,7 +157,7 @@ class Game:
         viewpoint.inventory[boussole.name] = boussole
         bouteille_de_rhum = Item("Bouteille de Rhum", "Une bouteille de Rhum cachée dans le bateau du pêcheur", 1)
         fishing_boat.inventory[bouteille_de_rhum.name] = bouteille_de_rhum
-        plastron = Item("Plastron", "Un plastron enchantée", 1)
+        plastron = Item("Plastron", "Un plastron enchantée", 8)
         bedroom.inventory[plastron.name] = plastron
 
 
